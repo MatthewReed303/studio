@@ -1,0 +1,41 @@
+name: Build
+
+on: push
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-2022]
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v4
+
+      - name: Install Node.js, NPM and Yarn
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Additional step for ubuntu
+        if: startsWith(matrix.os, 'ubuntu')
+        run: |
+          sudo apt update
+          sudo apt-get install -y libudev-dev
+
+      - name: Build Electron app
+        uses: coparse-inc/action-electron-builder@v1.0.0
+        with:
+          github_token: ${{ secrets.github_token }}
+          # Explicitly disable releasing
+          release: false
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.os }}
+          path: dist
+          # Keep artifacts for 14 days (adjust as needed)
+          retention-days: 14
